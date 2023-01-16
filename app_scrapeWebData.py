@@ -36,7 +36,7 @@ driver.implicitly_wait( 7 );
 ###
 # location 
 ## mui-component-select-location
-loc_elem = driver.find_element_by_css_selector( "#mui-component-select-location");
+loc_elem = driver.find_element_by_css_selector( "#mui-component-select-location")
 loc_elem.send_keys("Any Location" + Keys.RETURN )
 
 actions = ActionChains(driver)

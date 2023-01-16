@@ -8,8 +8,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import pandas as pd 
 
-url = "https://www.bestcoastpairings.com/event/ZMe2dZaoUv?active_tab=roster"
 
+event_guid = "ZMe2dZaoUv"
+url = f"https://www.bestcoastpairings.com/event/{event_guid}?active_tab=roster"
 driver = webdriver.Edge(executable_path='C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe')
 driver.get( url )
 
@@ -75,6 +76,45 @@ actions.pause( 6 )
 actions.perform() 
 
 
-driver.get( url )
-print ( 'debugger')
+#driver.get( url )
 
+
+try:
+    elem = WebDriverWait(driver, 5).until(
+        EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
+        )
+except : 
+    pass 
+finally:
+    print('time pass')
+
+htmlCode = driver.page_source
+soup=BeautifulSoup(htmlCode, "html.parser")
+
+list_links = soup.find_all('a')
+army_lists = [] 
+for li in list_links : 
+    url = li.attrs['href'] ; 
+    if "list" in url :
+        obj = {} 
+        obj = { 
+                "event" : event_guid 
+                , "list_url" : f"https://www.bestcoastpairings.com{url}" }
+        army_lists.append( obj )
+
+for al in army_lists :
+    driver.get( al["list_url"])
+    try:
+        elem = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
+            )
+    except : 
+        pass 
+    finally:
+        print('time pass')
+    full_list_text = driver.find_element_by_class_name( "list" ).text
+    al["full_list_text"] = full_list_text 
+#foundLists = soup.find_all("a", string=["View List"])
+df = pd.DataFrame( army_lists )
+df.to_csv( f"event_{event_guid}_army_lists.csv ")
+print( "debugger") ; 
