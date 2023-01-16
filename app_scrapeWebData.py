@@ -109,28 +109,30 @@ while( 1 == 1 ):
         EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
         )
         loadMoreButton = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/div/div/div[2]/div[3]/div[2]/button')
-        if ( loadMoreButton != None ) :  
-            actions = ActionChains( driver ) 
-            actions.move_to_element( loadMoreButton )
-            actions.click( loadMoreButton ) 
-            actions.perform() 
-            pagesLoaded = pagesLoaded + 1 
-            print( "loaded pages ", pagesLoaded )
-            export_data(  driver.page_source )
+        #if ( loadMoreButton != None ) :  
+        actions = ActionChains( driver ) 
+        actions.move_to_element( loadMoreButton )
+        actions.click( loadMoreButton ) 
+        actions.perform() 
+        pagesLoaded = pagesLoaded + 1 
+        print( "loaded pages ", pagesLoaded )
+        export_data(  driver.page_source )
+        #else: 
+        #    print("button not found" )
+        #    doLoop = -2 
     except : 
-        print( "passing" )
+        #print( "passing" )
+        print("button not found" )
+        doLoop = -2 
         pass 
-        
+        break 
         
     finally:
         print('time pass')
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         
 
-        else:
-            print("button not found" )
-            doLoop = -2 
-            break 
+       
 
 # if 'apples' in s:
 #<a class="MuiButtonBase-root MuiCardActionArea-root css-1jluznr" tabindex="0" href="/event/9dgpLmdYHU" target="_blank">
