@@ -1,6 +1,8 @@
 
 
 import enum
+import pandas as pd 
+import copy
 
 
 class ArmyListFormatType(enum.Enum):
@@ -8,7 +10,17 @@ class ArmyListFormatType(enum.Enum):
     BATTLESCRIBE = 2
     AOS_MOBILE_APP = 3
     UNKNOWN = 4
- 
+
+class UnitGroup(enum.Enum):
+    UNKNOWN = "UNKOWN"
+    LEADER = "Leaders"
+    BATTLELINE = "Battleline"
+    UNIT = "Units"
+    OTHER = "Other"
+    BEHEMOTH = "Behemoth"
+    ARTILLERY = "Artillery"
+    ENDLESS_SPELLS = "EndlessSpell"
+    META = "Army"
 
 def detect_list_type( armyList ):
     #if "list" in url :
@@ -29,27 +41,33 @@ def parseKeyValue( lineString, obj , renameKey = None ) :
     # - Lore of the Deeps: Steed of Tides
     lineString = lineString.replace( "- " , "").strip() 
     colon_firstIndex = lineString.find( ":" )
-    extracted_key = lineString[ 0 : colon_firstIndex ]
-    if renameKey != None : 
-        extracted_key = renameKey 
-    extracted_value = lineString[ colon_firstIndex+1 : ].strip()
+    if colon_firstIndex > 0 : 
+        extracted_key = lineString[ 0 : colon_firstIndex ]
+        if renameKey != None : 
+            extracted_key = renameKey 
+        extracted_value = lineString[ colon_firstIndex+1 : ].strip()
     
+        copyIndex = 1 
+        doesExist = 1
+        objKeys = obj.keys() 
+        path = extracted_key 
+        # what if key already exists ? 
+        if extracted_key in objKeys : 
+            while doesExist == 1 : 
+                path = f"{extracted_key}_{copyIndex}"
+                if path in objKeys : 
+                    doesExist = 1
+                else :
+                    doesExist = 0 
 
-    copyIndex = 1 
-    
-    doesExist = 1
-    objKeys = obj.keys() 
-    path = extracted_key 
-    if extracted_key in objKeys : 
-        while doesExist == 1 : 
-            path = f"{extracted_key}_{copyIndex}"
-            if path in objKeys : 
-                doesExist = 1
-            else :
-                doesExist = 0 
+        
+        obj[ path ] = extracted_value 
+        return path 
 
-    # what if key already exists ? 
-    obj[ path ] = extracted_value 
+def resetObj( oObj , label ): 
+    obj = copy.deepcopy( oObj )
+    obj[ "type" ] = label
+    return obj
 
 def parseListString( armyList ):
 
@@ -57,60 +75,92 @@ def parseListString( armyList ):
     lineNum = 0 
     faction_obj = {}
     units = [] 
-    leader = { } 
+    keep = [] 
     unit = { } 
-    leaderLineNum = -1 
-    battlelineLineNum = -1
+    headingType = UnitGroup.META
+    prevLine = ""
     for line in armyList.splitlines():
         if formatType == ArmyListFormatType.WARSCROLL_BUILDER and len(line) > 0 :
-            if lineNum == 0 :
-                faction_string = line.replace( "Allegiance: " , "" ).strip()
-                faction_obj["faction"] = faction_string
-            elif lineNum == 1 : 
-                colon_firstIndex = line.find( ":" )
-                faction_obj['subfaction'] = line[colon_firstIndex+1:].strip()
-            elif lineNum == 2 : 
-                colon_firstIndex = line.find( ":" )
-                faction_obj['grandStrategy'] = line[colon_firstIndex+1:].strip()
-            elif lineNum == 3 : 
-                colon_firstIndex = line.find( ":" )
-                faction_obj['triumph'] = line[colon_firstIndex+1:].strip()
-            elif "Leaders" in line :
-               leaderLineNum = lineNum
-               print('leadesr start at line ', leaderLineNum )
-            elif "Battleline" in line : 
-                leaderLineNum = -1 
-                battlelineLineNum = lineNum
-            elif "Units":
-                pass
-            elif ""
+            if headingType == UnitGroup.META:
+                if lineNum == 0 :
+                    parseKeyValue( line , faction_obj , "faction")
+                else: 
+                    print("debugger")
+                    parseKeyValue( line , faction_obj )
+                
+            if "Leaders" in line :
+               headingType = UnitGroup.LEADER
+               unit["type"] = headingType.value
+               
+            if "Battleline" in line :   
+                if unit != faction_obj :  
+                    units.append( unit )
+                
+                headingType = UnitGroup.BATTLELINE
+                unit = resetObj(faction_obj, headingType.value)
+                print('BATTLELINE start at line ', lineNum )
 
+            if "Units" in line :
+                if unit != faction_obj : 
+                    units.append( unit )
+                headingType = UnitGroup.UNIT
+                unit = resetObj(faction_obj, headingType.value)
+                print('Units start at line ', lineNum )
+           
+            if "Endless Spells" in line :
+                if unit != faction_obj :  
+                    units.append( unit )
+                headingType = UnitGroup.ENDLESS_SPELLS
+                unit = resetObj(faction_obj, headingType.value)
+                print('Endless start at line ', lineNum )
+
+            if "Behemoth" in line : 
+                if unit != faction_obj : 
+                    units.append( unit )
+                headingType = UnitGroup.BEHEMOTH
+                unit = resetObj(faction_obj, headingType.value)
+                
             # started parsing leaders
-            if leaderLineNum > 0 :
+            if headingType == UnitGroup.LEADER :
                 # not a subability / enhancement to leader 
                 if line[0] != "-" : 
                     # what if an existing leader ?
-                    if "isGeneral" in leader.keys() :  
-                        units.append( leader )
-                        leader = {}
-                        print('resetting leader OBJ')
+                    #if "isGeneral" in unit.keys() :  
+                    units.append( unit )
+                    unit = {}
+                    unit["type"] = headingType.value
+                    print('resetting leader OBJ')
                     
                     # first run 
-                    print('setting value run')
-                    leader["name"] = line 
+                    print(headingType.value)
+                    if line != headingType.value:
+                        unit["name"] = line 
                     
                 # is sub ability of assumed leader
                 else : 
                     # only run once for general check 
-                    if "isGeneral" not in leader.keys() :  
+                    if "isGeneral" not in unit.keys() :  
                         if "- General" in line :
-                            leader["isGeneral"] = 1 
-                        else :
-                            leader["isGeneral"] = 0
-                    parseKeyValue( line , leader )
+                            unit["isGeneral"] = 1 
+                    if "Lore" in line : 
+                        parseKeyValue( line , unit , "Spell" )
+                        colon_firstIndex = line.find( ":" )
+                        extracted_key = line[ 0 : colon_firstIndex ]
+                        to_pass =  "lore: " + line[  : colon_firstIndex  ]
+                        parseKeyValue( to_pass , unit , "Spell Lore")
+                        #unit["Spell Lore"] = line[ colon_firstIndex  : ].strip() 
+                        print('setting spells')
+                    else : 
+                        parseKeyValue( line , unit )
             #battlelineLineNum = lineNum
             # started parsing battleline
-            if battlelineLineNum > 0 :
+            if headingType in [ UnitGroup.BATTLELINE 
+                , UnitGroup.ARTILLERY 
+                , UnitGroup.BATTLELINE
+                , UnitGroup.BEHEMOTH 
+                , UnitGroup.ENDLESS_SPELLS
+                , UnitGroup.UNIT ] :
+                print( headingType.value )
                 # not a subability / enhancement to leader 
                 if line[0] != "-" : 
                     # what if an existing leader ?
@@ -118,33 +168,40 @@ def parseListString( armyList ):
                     if ( unit != {} ):
                         units.append( unit )
                         unit = {}
-                        print('resetting leader OBJ')
+                        unit["type"] = headingType.value
+                        print('resetting unit OBJ')
                     
                     # first run 
                     print('setting value run')
                     x_firstIndex = line.find( "x" )
-                    unit['unitsCount'] = line[:colon_firstIndex].strip()
-                    unit["name"] = line[colon_firstIndex+1 : ].strip() 
+                    l_paren = line.find( "(" )
+                    r_paren = line.find( ")" )
+                    if r_paren > l_paren : 
+                        unitCount = 1 
+                        if x_firstIndex > 1 :
+                            unitCount = line[:x_firstIndex-1].strip()
+                        name  = line[x_firstIndex+1 : ].strip()
+                        unit['unitsCount'] = unitCount
+                        unit["name"] = line[x_firstIndex+1 : ].strip() 
                     
                 # is sub ability of assumed leader
                 else : 
                     # only run once for general check 
-                    if "isGeneral" not in leader.keys() :  
-                        if "- General" in line :
-                            leader["isGeneral"] = 1 
-                        else :
-                            leader["isGeneral"] = 0
-                    parseKeyValue( line , leader )
+                    parseKeyValue( line , unit )
                     
-
-
         else:
             print('implementing later....')
         lineNum += 1 
+        prevLine = line 
         #print(line)
     print ( "debugger ")
-    # units 
-    return faction_obj 
+    for u in units : 
+        if "name" in u.keys():
+            keep.append( u ) 
+
+    return keep 
+
+    
 warscroll_builder_list = """Allegiance: Idoneth Deepkin
 - Enclave: Mor'Phann
 - Grand Strategy: The Creeping Gloomtide
@@ -287,4 +344,6 @@ print( "should be battlescribe " , result2 )
 result3 = detect_list_type( aos_app_list )
 print( "should be aos app " , result3 )
 
-parseListString( warscroll_builder_list )
+units = parseListString( warscroll_builder_list )
+df = pd.json_normalize( units )
+df.to_csv('units.csv')
