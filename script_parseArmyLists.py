@@ -41,6 +41,8 @@ def parseKeyValue( lineString, obj , renameKey = None ) :
     # - Lore of the Deeps: Steed of Tides
     lineString = lineString.replace( "- " , "").strip() 
     colon_firstIndex = lineString.find( ":" )
+    if colon_firstIndex < 0 : 
+        colon_firstIndex = lineString.find( " x ")
     if colon_firstIndex > 0 : 
         extracted_key = lineString[ 0 : colon_firstIndex ]
         if renameKey != None : 
@@ -76,23 +78,27 @@ def parseListString( armyList ):
     faction_obj = {}
     units = [] 
     keep = [] 
+    leaderHeaders = [ "Leaders" , "LEADERS" ]
     unit = { } 
     headingType = UnitGroup.META
     prevLine = ""
     for line in armyList.splitlines():
-        if formatType == ArmyListFormatType.WARSCROLL_BUILDER and len(line) > 0 :
+        if len(line) > 0 :
+        # formatType == ArmyListFormatType.WARSCROLL_BUILDER and len(line) > 0 :
             if headingType == UnitGroup.META:
                 if lineNum == 0 :
                     parseKeyValue( line , faction_obj , "faction")
                 else: 
-                    print("debugger")
+                    #print("debugger")
                     parseKeyValue( line , faction_obj )
                 
-            if "Leaders" in line :
+            #if "Leaders" in line or "LEADERS" :
+            if any( h in line for h in [ "Leaders" , "LEADERS" ] ):
                headingType = UnitGroup.LEADER
                unit["type"] = headingType.value
                
-            if "Battleline" in line :   
+            #if "Battleline" in line or "BATTLELINE" in line :    
+            if any( h in line for h in [ "Battleline" , "BATTLELINE" ] ):
                 if unit != faction_obj :  
                     units.append( unit )
                 
@@ -100,21 +106,24 @@ def parseListString( armyList ):
                 unit = resetObj(faction_obj, headingType.value)
                 print('BATTLELINE start at line ', lineNum )
 
-            if "Units" in line :
+            #if "Units" in line or "OTHER" in line :
+            if any( h in line for h in [ "Units" , "OTHER" ] ):
                 if unit != faction_obj : 
                     units.append( unit )
                 headingType = UnitGroup.UNIT
                 unit = resetObj(faction_obj, headingType.value)
                 print('Units start at line ', lineNum )
            
-            if "Endless Spells" in line :
+            #if "Endless Spells" in line or "ENDLESS SPELL" in line:
+            if any( h in line for h in [ "Endless Spells" , "ENDLESS SPELL" ] ):
                 if unit != faction_obj :  
                     units.append( unit )
                 headingType = UnitGroup.ENDLESS_SPELLS
                 unit = resetObj(faction_obj, headingType.value)
                 print('Endless start at line ', lineNum )
 
-            if "Behemoth" in line : 
+            #if "Behemoth" in line or "BEHEMOTH" in line : 
+            if any( h in line for h in [ "Behemoth" , "BEHEMOTH" ] ):
                 if unit != faction_obj : 
                     units.append( unit )
                 headingType = UnitGroup.BEHEMOTH
@@ -134,7 +143,14 @@ def parseListString( armyList ):
                     # first run 
                     print(headingType.value)
                     if line != headingType.value:
-                        unit["name"] = line 
+                        l_paren = line.find( "(" )
+                        r_paren = line.find( ")" )
+                        if r_paren > l_paren : 
+                            unitCount = 1 
+                            name  = line[ 0 : ].strip()
+                            unit['unitsCount'] = unitCount
+                            unit["points"] = line[ l_paren + 1 : r_paren ]
+                            unit["name"] = line[ : l_paren-1 ].strip() 
                     
                 # is sub ability of assumed leader
                 else : 
@@ -182,7 +198,8 @@ def parseListString( armyList ):
                             unitCount = line[:x_firstIndex-1].strip()
                         name  = line[x_firstIndex+1 : ].strip()
                         unit['unitsCount'] = unitCount
-                        unit["name"] = line[x_firstIndex+1 : ].strip() 
+                        unit["points"] = line[ l_paren + 1 : r_paren ]
+                        unit["name"] = line[x_firstIndex+1 : l_paren-1 ].strip() 
                     
                 # is sub ability of assumed leader
                 else : 
@@ -201,6 +218,55 @@ def parseListString( armyList ):
 
     return keep 
 
+
+
+aos_app_list = """- Army Faction: Sylvaneth
+- Subfaction: Heartwood
+- Season of War: The Dwindling 
+- Grand Strategy: Take What’s Theirs
+- Triumph: Inspired
+LEADERS
+Warsong Revenant (305)***
+- General
+- Command Traits: Spellsinger
+- Artefacts of Power: Arcane Tome
+- Spells: Verdant Blessing, Verdurous Harmony
+Arch-Revenant (120)***
+Branchwych (130)***
+- Artefacts of Power: Acorn of the Ages
+- Spells: Regrowth, Verdant Blessing
+BATTLELINE
+Tree-Revenants (110)*
+- Scion
+- Glade Banner Bearer
+- Waypipes
+- Protector Glaive
+Tree-Revenants (110)*
+- Scion
+- Glade Banner Bearer
+- Waypipes
+- Protector Glaive
+Kurnoth Hunters with Kurnoth Scythes (500)**
+- Huntmaster
+Kurnoth Hunters with Kurnoth Greatswords (250)**
+- Huntmaster
+OTHER
+Spiterider Lancers (420)**
+- Spiterider Scion
+- 2 x Spiterider Standard Bearer
+- 2 x Spiterider Hornblower
+ENDLESS SPELLS & INVOCATIONS
+1 x Spiteswarm Hive (40)
+TERRAIN
+1 x Awakened Wyldwood (0)
+CORE BATTALIONS
+*Expert Conquerors
+**Bounty Hunters
+***Command Entourage
+- Magnificent
+
+TOTAL POINTS: 1985/2000
+Created with Warhammer Age of Sigmar: The App"""
     
 warscroll_builder_list = """Allegiance: Idoneth Deepkin
 - Enclave: Mor'Phann
@@ -250,52 +316,6 @@ Drops: 4
 
 
 
-aos_app_list = """- Army Faction: Sylvaneth
-- Subfaction: Heartwood
-- Season of War: The Dwindling - Grand Strategy: Take What’s Theirs
-- Triumph: Inspired
-LEADERS
-Warsong Revenant (305)***
-- General
-- Command Traits: Spellsinger
-- Artefacts of Power: Arcane Tome
-- Spells: Verdant Blessing, Verdurous Harmony
-Arch-Revenant (120)***
-Branchwych (130)***
-- Artefacts of Power: Acorn of the Ages
-- Spells: Regrowth, Verdant Blessing
-BATTLELINE
-Tree-Revenants (110)*
-- Scion
-- Glade Banner Bearer
-- Waypipes
-- Protector Glaive
-Tree-Revenants (110)*
-- Scion
-- Glade Banner Bearer
-- Waypipes
-- Protector Glaive
-Kurnoth Hunters with Kurnoth Scythes (500)**
-- Huntmaster
-Kurnoth Hunters with Kurnoth Greatswords (250)**
-- Huntmaster
-OTHER
-Spiterider Lancers (420)**
-- Spiterider Scion
-- 2 x Spiterider Standard Bearer
-- 2 x Spiterider Hornblower
-ENDLESS SPELLS & INVOCATIONS
-1 x Spiteswarm Hive (40)
-TERRAIN
-1 x Awakened Wyldwood (0)
-CORE BATTALIONS
-*Expert Conquerors
-**Bounty Hunters
-***Command Entourage
-- Magnificent
-
-TOTAL POINTS: 1985/2000
-Created with Warhammer Age of Sigmar: The App"""
 
 battlescribe_list = """++ **Pitched Battle GHB 2022** 2,000 (Chaos - Slaves to Darkness) [2,000pts] ++
 
@@ -344,6 +364,9 @@ print( "should be battlescribe " , result2 )
 result3 = detect_list_type( aos_app_list )
 print( "should be aos app " , result3 )
 
-units = parseListString( warscroll_builder_list )
+combined = [] 
+# units = parseListString( warscroll_builder_list )
+units = parseListString( aos_app_list )
+combined.append( units )
 df = pd.json_normalize( units )
 df.to_csv('units.csv')
