@@ -47,6 +47,8 @@ def parseKeyValue( lineString, obj , renameKey = None ) :
         extracted_key = lineString[ 0 : colon_firstIndex ]
         if renameKey != None : 
             extracted_key = renameKey 
+        if len( extracted_key ) < 2 :
+            extracted_key = "option"
         extracted_value = lineString[ colon_firstIndex+1 : ].strip()
     
         copyIndex = 1 
@@ -71,11 +73,12 @@ def resetObj( oObj , label ):
     obj[ "type" ] = label
     return obj
 
-def parseListString( armyList ):
+def parseListString( armyList , listId ):
 
     formatType = detect_list_type( armyList )
     lineNum = 0 
     faction_obj = {}
+    faction_obj[ "listId"] = listId 
     units = [] 
     keep = [] 
     leaderHeaders = [ "Leaders" , "LEADERS" ]
@@ -166,6 +169,13 @@ def parseListString( armyList ):
                         parseKeyValue( to_pass , unit , "Spell Lore")
                         #unit["Spell Lore"] = line[ colon_firstIndex  : ].strip() 
                         print('setting spells')
+                    elif "Spells:" in line : 
+                        #- Spells: Regrowth, Verdant Blessing
+                        colon_firstIndex = line.find( ":" )
+                        splitSpells = line[  colon_firstIndex+1 : ].split( "," )
+                        for s in splitSpells : 
+                            feedIn = f"Spell:{s}"
+                            parseKeyValue( f"Spell:{s}", unit )
                     else : 
                         parseKeyValue( line , unit )
             #battlelineLineNum = lineNum
@@ -214,9 +224,10 @@ def parseListString( armyList ):
     print ( "debugger ")
     for u in units : 
         if "name" in u.keys():
+            u[ "listId"] = listId 
             keep.append( u ) 
 
-    return keep 
+    return keep , faction_obj 
 
 
 
@@ -364,9 +375,22 @@ print( "should be battlescribe " , result2 )
 result3 = detect_list_type( aos_app_list )
 print( "should be aos app " , result3 )
 
-combined = [] 
+#units_df = [] 
+#factions_df = [] 
+units_df = pd.DataFrame({})
+factions_df = pd.DataFrame({})
 # units = parseListString( warscroll_builder_list )
-units = parseListString( aos_app_list )
-combined.append( units )
-df = pd.json_normalize( units )
-df.to_csv('units.csv')
+units , faction = parseListString( aos_app_list , "factionA" )
+units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
+factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
+'''
+#append to existing DFs
+units , faction = parseListString( warscroll_builder_list , "factionB" )
+units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
+factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
+'''
+units_df.to_csv('units.csv')
+factions_df.to_csv('factions.csv')
+
+#df = pd.json_normalize( union_factions )
+#df.to_csv('factions.csv')
