@@ -117,4 +117,9 @@ for al in army_lists :
 #foundLists = soup.find_all("a", string=["View List"])
 df = pd.DataFrame( army_lists )
 df.to_csv( f"event_{event_guid}_army_lists.csv ")
+
+# now get placings data
+# https://www.bestcoastpairings.com/event/ZMe2dZaoUv?active_tab=pairings&round=1
+
+# trying to get all the pairings data 
 print( "debugger") ; 
