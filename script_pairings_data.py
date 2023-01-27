@@ -76,12 +76,26 @@ def parseRoundResults( driver, eventId, round ):
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=pairings&round={round}"
     driver.get( url )
     waitSync( 5 )
+
+    resultsButton = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[1]/div/div/input' ) 
+
+    actions = ActionChains( driver ); 
+    actions.move_to_element( resultsButton ) 
+    actions.click() 
+    actions.pause( 1 ) 
+    actions.send_keys( 'A')  
+    actions.send_keys( Keys.ENTER )
+    actions.perform() 
+
+    waitSync( 2 )
+    
     htmlCode = driver.page_source
     soup=BeautifulSoup(htmlCode, "html.parser")
+    
 
     list_links1 = soup.find_all('//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[3]/div[2]/a')
     list_links = soup.find_all( 'a' )
-
+    
     pairings = []  
     for elem in list_links : 
         if "href" in elem.attrs and "/pairing/" in elem.attrs['href'] :
@@ -139,6 +153,7 @@ def parseRoundResults( driver, eventId, round ):
                     
             if pairing_obj != {}: 
                 pairing_obj["round"] = round      
+                pairing_obj["game_index"] = len(pairings)
                 pairings.append( pairing_obj )
                 print('adding a pairing')
                 pairing_obj = {} 
