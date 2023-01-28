@@ -7,62 +7,12 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import pandas as pd 
+import selenium_utils as su 
 
-
-def waitSync( waitInSeconds = 3 ) :
-    try:
-        elem = WebDriverWait(driver, 3).until(
-            EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
-            )
-    except : 
-        pass 
-    finally:
-        print('time pass')
-
-# 'settings.ini')
-def loginAndWait(driver , config_path, waitInSeconds=3 ):
-    
-    ###
-    # location 
-    ## mui-component-select-location
-    login = driver.find_element_by_xpath( '//*[@id="root"]/div/div[1]/header/div/div[3]/button')
-
-    
-    actions = ActionChains(driver)
-    actions.move_to_element(login)
-    actions.click(login)
-    actions.pause(1)
-    actions.click(login)
-    actions.pause(3)
-    actions.perform()
-
-    import configparser
-    config = configparser.ConfigParser()
-    config.sections()
-    config.read(config_path)
-
-
-    # logging in 
-    user  = driver.find_element_by_xpath("//input[@id='mui-3']")
-    pw = driver.find_element_by_xpath("//input[@id='mui-4']")
-    checkbox = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[4]/label/span[1]/input')
-    btn = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[6]/button')
-
-    actions = ActionChains( driver ); 
-    actions.pause( 3 )
-    actions.send_keys_to_element(user, config['bcp']['user']  )
-    actions.send_keys_to_element(pw, config['bcp']['pw'] )
-    actions.move_to_element( checkbox )
-    actions.click( checkbox )
-    actions.pause( 2 )
-    actions.move_to_element( btn )
-    actions.click( btn )
-    actions.pause( 2 )
-    actions.perform() 
-
-    waitSync( 3 ) 
-
+#local RTT
 event_guid = "ZMe2dZaoUv"
+#LVO 
+event_guid = "AjzJ5hifwT"
 url = f"https://www.bestcoastpairings.com/event/{event_guid}?active_tab=pairings&round=1"
 driver = webdriver.Edge(executable_path='C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe')
 driver.get( url )
@@ -75,7 +25,7 @@ def parseRoundResults( driver, eventId, round ):
     event_guid = "ZMe2dZaoUv"
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=pairings&round={round}"
     driver.get( url )
-    waitSync( 5 )
+    su.waitSync( 5 )
 
     resultsButton = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[1]/div/div/input' ) 
 
@@ -87,7 +37,7 @@ def parseRoundResults( driver, eventId, round ):
     actions.send_keys( Keys.ENTER )
     actions.perform() 
 
-    waitSync( 2 )
+    su.waitSync( 2 )
     
     htmlCode = driver.page_source
     soup=BeautifulSoup(htmlCode, "html.parser")
@@ -163,14 +113,14 @@ def parseRoundResults( driver, eventId, round ):
 
 games = parseRoundResults( driver, "ZMe2dZaoUv" , 1 )
 games_df = pd.json_normalize( games )
-waitSync( 3 )
+su.waitSync( 3 )
 
 games = parseRoundResults( driver, "ZMe2dZaoUv" , 2 )
 games_df = pd.concat( [ games_df , pd.json_normalize( games ) ] )
-waitSync( 3 )
+su.waitSync( 3 )
 
 games = parseRoundResults( driver, "ZMe2dZaoUv" , 3 )
 games_df = pd.concat( [ games_df , pd.json_normalize( games ) ] )
-waitSync( 3 )
+su.waitSync( 3 )
 
 games_df.to_csv( "pairings.csv")
