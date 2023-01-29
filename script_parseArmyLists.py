@@ -42,6 +42,7 @@ def detect_list_type( armyList ):
 
 def parseKeyValue( lineString, obj , renameKey = None ) : 
     # - Lore of the Deeps: Steed of Tides
+    # print("@ start ")
     lineString = lineString.replace( "- " , "").strip() 
     colon_firstIndex = lineString.find( ":" )
     if colon_firstIndex < 0 : 
@@ -66,8 +67,9 @@ def parseKeyValue( lineString, obj , renameKey = None ) :
                     doesExist = 1
                 else :
                     doesExist = 0 
+                copyIndex+= 1
 
-        
+        print(f"[{path}] = {extracted_value}")
         obj[ path ] = extracted_value 
         return path 
 
@@ -183,48 +185,50 @@ def parseListString( armyList , listId ):
    
             # is sub ability of assumed leader
 
-            elif formatType in [ ArmyListFormatType.AOS_MOBILE_APP
-             , ArmyListFormatType.WARSCROLL_BUILDER ]:
+            else :
+                if formatType in [ ArmyListFormatType.AOS_MOBILE_APP
+                , ArmyListFormatType.WARSCROLL_BUILDER ]:
                 # only run once for general check 
-                if "general" in line.lower() :
-                    unit["isGeneral"] = 1 
-                if "Lore" in line : 
-                    parseKeyValue( line , unit , "Spell" )
-                    colon_firstIndex = line.find( ":" )
+                    if "general" in line.lower() :
+                        unit["isGeneral"] = 1 
+                    if "Lore: " in line : 
+                        parseKeyValue( line , unit , "Spell" )
+                        colon_firstIndex = line.find( ":" )
 
-                    to_pass =  "lore: " + line[  : colon_firstIndex  ]
-                    parseKeyValue( to_pass , unit , "Spell Lore")
-                   
-                elif "Spells:" in line : 
-                    #- Spells: Regrowth, Verdant Blessing
-                    colon_firstIndex = line.find( ":" )
-                    splitSpells = line[  colon_firstIndex+1 : ].split( "," )
-                    for s in splitSpells : 
-                        parseKeyValue( f"Spell:{s}", unit )
-                else : 
-                    parseKeyValue( line , unit )
-            elif formatType == ArmyListFormatType.BATTLESCRIBE : 
-
-                lbracket = line.find( "[" )
-                rbracket = line.find( "]" )
-                if lbracket > 1 : 
-                    unit = {}
-                    unit[ "name" ] = line [ : lbracket - 1 ]
-                    unit[ "points" ] = line [ lbracket + 1 : rbracket - 3 ]
-
-                    colon_firstIndex = line.find( ":" )
-                    options = line[  colon_firstIndex+1 : ]
-                    commaIndex = options.find( ",")
+                        to_pass =  "lore: " + line[  : colon_firstIndex  ]
+                        parseKeyValue( to_pass , unit , "Spell Lore")
                     
-                    if commaIndex > 0 :
-                        optionsList = options.split( ",")
-                        for x in range( 0 , len( optionsList ) ) : 
-                            unit[ f"option_{x}"] = optionsList[x]
-                    #    for slo in optionsList : 
-                    #        feedIn = f"Option:{slo}"
-                    #        parseKeyValue( feedIn , leader )
-                    
-                    units.append( unit )
+                    elif "Spells:" in line : 
+                        #- Spells: Regrowth, Verdant Blessing
+                        colon_firstIndex = line.find( ":" )
+                        splitSpells = line[  colon_firstIndex+1 : ].split( "," )
+                        for s in splitSpells : 
+                            toSend = f"Spell:{s}"
+                            parseKeyValue( toSend, unit )
+                    else : 
+                        parseKeyValue( line , unit )
+                elif formatType == ArmyListFormatType.BATTLESCRIBE : 
+
+                    lbracket = line.find( "[" )
+                    rbracket = line.find( "]" )
+                    if lbracket > 1 : 
+                        unit = {}
+                        unit[ "name" ] = line [ : lbracket - 1 ]
+                        unit[ "points" ] = line [ lbracket + 1 : rbracket - 3 ]
+
+                        colon_firstIndex = line.find( ":" )
+                        options = line[  colon_firstIndex+1 : ]
+                        commaIndex = options.find( ",")
+                        
+                        if commaIndex > 0 :
+                            optionsList = options.split( ",")
+                            for x in range( 0 , len( optionsList ) ) : 
+                                unit[ f"option_{x}"] = optionsList[x]
+                        #    for slo in optionsList : 
+                        #        feedIn = f"Option:{slo}"
+                        #        parseKeyValue( feedIn , leader )
+                        
+                        units.append( unit )
         #battlelineLineNum = lineNum
         # started parsing battleline
 
@@ -327,46 +331,46 @@ def parseListString( armyList , listId ):
 
     return keep , faction_obj 
 
-tz_list = """Allegiance: Disciples of Tzeentch
-- Change Coven: Hosts Arcanum
-- Grand Strategy: Master of Destiny
-- Triumphs: Inspired
-
-Leaders
-Curseling, Eye of Tzeentch (180)*
-- Artefact: Arcane Tome (Universal Artefact)
-- Lore of Fate: Shield of Fate
-Kairos Fateweaver (435)*
-Magister (120)*
+lrl_list = """"- Army Faction: Lumineth Realm-lords
+- Subfaction: Helon
+- Grand Strategy: Scinari Illumination
+- Triumph: Inspired
+LEADERS
+Archmage Teclis (700)*
+- Spells: Transporting Vortex
+Scinari Loreseeker (160)*
+- Spells: Ghost-mist
+Scinari Enlightener (170)*
 - General
-- Command Trait: Arcane Sacrifice
-- Lore of Fate: Arcane Suggestion
-Magister (120)
-- Lore of Fate: Glimpse of Future
-
-Battleline
-3 x Screamers of Tzeentch (100)*
-10 x Pink Horrors of Tzeentch (250)*
-10 x Kairic Acolytes (120)*
-- 7x Cursed Blade & Arcanite Shield
-- 3x Cursed Glaives
-
-Behemoths
-Krondspine Incarnate of Ghur (480)*
-
-Endless Spells & Invocations
-Burning Sigil of Tzeentch (50)
-Chronomantic Cogs (70)
-Daemonic Simulacrum (60)
-
-Core Battalions
+- Command Traits: Loremaster
+- Artefacts of Power: Silver Wand
+- Spells: Overwhelming Heat, Speed of Hysh, Total Eclipse
+BATTLELINE
+Hurakan Windchargers (130)*
+- Standard Bearer
+- Windspeaker Seneschal
+Hurakan Windchargers (130)*
+- Windspeaker Seneschal
+- Standard Bearer
+Hurakan Windchargers (130)*
+- Windspeaker Seneschal
+- Standard Bearer
+Hurakan Windchargers (260)*
+- Windspeaker Seneschal
+- 2 x Standard Bearer
+OTHER
+Vanari Dawnriders (130)*
+- Steedmaster
+- Standard Bearer
+- Spells: Etheral Blessings
+ENDLESS SPELLS & INVOCATIONS
+1 x Rune of Petrification (60)
+1 x Soulsnare Shackles (40)
+1 x Purple Sun of Shyish (90)
+CORE BATTALIONS
 *Battle Regiment
-
-Total: 1985 / 2000
-Reinforced Units: 0 / 4
-Allies: 0 / 400
-Wounds: 58
-Drops: 2"""
+TOTAL POINTS: 2000/2000
+Created with Warhammer Age of Sigmar: The App"""
 '''
 #STEP 1 - detection of format, tweak to be more resiliant later 
 result1 = detect_list_type( warscroll_builder_list )
@@ -382,7 +386,7 @@ units_df = pd.DataFrame({})
 factions_df = pd.DataFrame({})
 
 '''
-units , faction = parseListString( tz_list , "tzeentchList" )
+units , faction = parseListString( lrl_list , "lrl_problem" )
 units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
 factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
 
@@ -405,7 +409,7 @@ units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
 factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
 '''
 
-event_df = pd.read_csv( "event_ZMe2dZaoUv_army_lists.csv" )
+event_df = pd.read_csv( "event_GYoZGtzElR_army_lists.csv" )
 event_df.reset_index() 
 
 for index, row in event_df.iterrows():
@@ -420,6 +424,6 @@ for index, row in event_df.iterrows():
     units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
     factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
 
-units_df.to_csv('units.csv')
-factions_df.to_csv('factions.csv')
+units_df.to_csv('listParse_units.csv')
+factions_df.to_csv('listParse_factions.csv')
 
