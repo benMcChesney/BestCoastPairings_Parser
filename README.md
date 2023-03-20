@@ -11,4 +11,11 @@ core concept is to web scrape BCP to get enough meta data to do some analysis.
     - stores all events links in csv 
 
 2. app_eventWebData
-    - 
+    - change event id 
+
+3. script_pairings_data.py
+    - change event id 
+
+4. script_parseArmyLists.py
+    - change event id 
+

@@ -73,6 +73,17 @@ def parseKeyValue( lineString, obj , renameKey = None ) :
         obj[ path ] = extracted_value 
         return path 
 
+def parseGetKey( lineString ) : 
+    # - Lore of the Deeps: Steed of Tides
+    # print("@ start ")
+    lineString = lineString.replace( "- " , "").strip() 
+    lineString = lineString.replace( '.' , '' ).strip()
+    colon_firstIndex = lineString.find( ":" )
+  
+    if colon_firstIndex > 0 : 
+        extracted_key = lineString[ 0 : colon_firstIndex ]
+        return extracted_key 
+
 def resetObj( oObj , label ): 
     obj = copy.deepcopy( oObj )
     obj[ "type" ] = label
@@ -92,6 +103,10 @@ def parseListString( armyList , listId ):
     unit = { } 
     headingType = UnitGroup.META
     prevLine = ""
+    armyList = armyList.replace( '```' , '' ).strip() 
+
+    i = 0 
+    factionLine = -1 
     for line in armyList.splitlines() :
         #if len( line ) > 0 : 
             #if "Leaders" in line or "LEADERS" :
@@ -101,7 +116,7 @@ def parseListString( armyList , listId ):
             headingType = UnitGroup.LEADER
             unit["type"] = headingType.value
         
-        if any( h in line for h in [ "+ Allegiance +" ] ):
+        if any( h in line for h in [ "+ Allegiance +" , "Allegiance" ] ):
             headingType = UnitGroup.META
 
         #if "Battleline" in line or "BATTLELINE" in line :    
@@ -233,23 +248,41 @@ def parseListString( armyList , listId ):
         # started parsing battleline
 
         elif headingType == UnitGroup.META:
-            if formatType in [ ArmyListFormatType.AOS_MOBILE_APP 
-            , ArmyListFormatType.WARSCROLL_BUILDER ]:
+            
+            if formatType in [ ArmyListFormatType.AOS_MOBILE_APP , ArmyListFormatType.WARSCROLL_BUILDER ]:
             
                 if lineNum == 0 :
+                #line_lower = line.lower()
+                #if "faction" in line_lower and "subfaction" not in line_lower : 
+                #if ":" in line_lower : 
                     parseKeyValue( line , faction_obj , "faction")
-                elif lineNum == 1 : 
-                    parseKeyValue( line , faction_obj ,  "subfaction")
+                    #factionLine = lineNum 
+                #if (factionLine + 1 ) == lineNum :
+                #    parseKeyValue( line , faction_obj ,  "subfaction")  
+                #"subfaction" in line_lower :     
+                elif lineNum == 1 and "grand strategy:" not in line.lower() : 
+                    parseKeyValue( line , faction_obj ,  "subfaction")  
                 else: 
                     #print("debugger")
                     parseKeyValue( line , faction_obj )
             if formatType == ArmyListFormatType.BATTLESCRIBE : 
-                if lineNum == 0 : 
+                #if lineNum == 0 : 
+                
+                if "Allegiance:" in line : 
                     #++ **Pitched Battle GHB 2022** 2,000 (Chaos - Slaves to Darkness) [2,000pts] ++
-                    rParen = line.find( ")" )
-                    lParen = line.find( "- " )
-                    if rParen > 0 :
-                        faction_obj[ "faction" ] = line[ lParen + 1 :  rParen - 1].strip()               
+                    factionLine = lineNum
+                    
+                    parseKeyValue( line , faction_obj , "faction")
+                    
+                    #rParen = line.find( ")" )
+                    #lParen = line.find( "- " )
+                    #if rParen > 0 :
+                    #    faction_obj[ "faction" ] = line[ lParen + 1 :  rParen - 1].strip()    
+                elif factionLine > 0 and lineNum == factionLine+1 : 
+                    subfactionKey = parseGetKey( line )
+                    faction_obj[ "subfaction" ] = subfactionKey ; 
+                    parseKeyValue( line , faction_obj , "subfaction_option")
+                                 
             if formatType == ArmyListFormatType.WARSCROLL_BUILDER_PARTIAL :
                 if lineNum == 0 :
                     parseKeyValue( line , faction_obj , "faction")
@@ -321,6 +354,8 @@ def parseListString( armyList , listId ):
             else:
                 print('implementing later....')
 
+        # count "valid lines"
+        #if ":" in line : 
         lineNum += 1 
         prevLine = line 
 
@@ -331,85 +366,75 @@ def parseListString( armyList , listId ):
 
     return keep , faction_obj 
 
-lrl_list = """"- Army Faction: Lumineth Realm-lords
-- Subfaction: Helon
-- Grand Strategy: Scinari Illumination
-- Triumph: Inspired
-LEADERS
-Archmage Teclis (700)*
-- Spells: Transporting Vortex
-Scinari Loreseeker (160)*
-- Spells: Ghost-mist
-Scinari Enlightener (170)*
-- General
-- Command Traits: Loremaster
-- Artefacts of Power: Silver Wand
-- Spells: Overwhelming Heat, Speed of Hysh, Total Eclipse
-BATTLELINE
-Hurakan Windchargers (130)*
-- Standard Bearer
-- Windspeaker Seneschal
-Hurakan Windchargers (130)*
-- Windspeaker Seneschal
-- Standard Bearer
-Hurakan Windchargers (130)*
-- Windspeaker Seneschal
-- Standard Bearer
-Hurakan Windchargers (260)*
-- Windspeaker Seneschal
-- 2 x Standard Bearer
-OTHER
-Vanari Dawnriders (130)*
-- Steedmaster
-- Standard Bearer
-- Spells: Etheral Blessings
-ENDLESS SPELLS & INVOCATIONS
-1 x Rune of Petrification (60)
-1 x Soulsnare Shackles (40)
-1 x Purple Sun of Shyish (90)
-CORE BATTALIONS
-*Battle Regiment
-TOTAL POINTS: 2000/2000
-Created with Warhammer Age of Sigmar: The App"""
-'''
-#STEP 1 - detection of format, tweak to be more resiliant later 
-result1 = detect_list_type( warscroll_builder_list )
-print( "should be warscroll builder " , result1 )
-result2 = detect_list_type( battlescribe_list )
-print( "should be battlescribe " , result2 )
-result3 = detect_list_type( aos_app_list )
-print( "should be aos app " , result3 )
-'''
 #units_df = [] 
 #factions_df = [] 
+
+lrl_list = '''
+```
+Army Faction: Lumineth Realm-lords
+- Army Subfaction: Ymetrica
+- Grand Strategy: No Place for the Weak
+- Triumphs: Indomitable
+
+LEADER
+
+1 x Alarith Stonemage (130)
+- Spells: Crippling Vertigo
+- Aspects of the Champion: Tunnel Master
+
+1 x Avalenor (440)
+
+1 x Scinari Enlightener (170)
+- General
+- Command Traits: Loremaster
+- Spells: Protection of Hysh, Speed of Hysh, Total Eclipse
+
+BATTLELINE
+
+5 x Alarith Stoneguard (130)
+- Truestone Seneschal
+- Standard Bearer
+- Paired Stratum Hammers
+- Diamondpick Hammer
+
+5 x Alarith Stoneguard (130)
+- Truestone Seneschal
+- Standard Bearer
+- Paired Stratum Hammers
+- Diamondpick Hammer
+
+10 x Vanari Bladelords (260)
+- Bladelord Seneschal
+
+OTHER
+
+20 x Vanari Auralan Sentinels (300)
+- High Sentinel
+- Spells: Protection of Hysh
+
+20 x Vanari Auralan Sentinels (300)
+- High Sentinel
+- Spells: Total Eclipse
+
+5 x Vanari Dawnriders (130)
+- Steedmaster
+- Standard Bearer
+- Spells: Speed of Hysh
+
+TOTAL POINTS: (1990/2000)
+
+Created with Warhammer Age of Sigmar: The App
+'''
+
 units_df = pd.DataFrame({})
 factions_df = pd.DataFrame({})
+#units, faction = parseListString( lrl_list , 'asdas' )
+#units_df.to_csv('listParse_units.csv')
+#factions_df.to_csv('listParse_factions.csv')
 
-'''
-units , faction = parseListString( lrl_list , "lrl_problem" )
-units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
 
-# units = parseListString( warscroll_builder_list )
-units , faction = parseListString( aos_app_list , "listABC" )
-units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
-
-#append to existing DFs
-units , faction = parseListString( warscroll_builder_list , "listXYZ" )
-units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
-
-units , faction = parseListString( battlescribe_list , "listKLM" )
-units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
-
-units , faction = parseListString( khorne_list , "KhorneList" )
-units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
-'''
-
-event_df = pd.read_csv( "event_GYoZGtzElR_army_lists.csv" )
+#event_df = pd.read_csv( "event_Dv3LDfBRAU_army_lists.csv" )
+event_df = pd.read_csv( "Dv3LDfBRAU_event_data_badParsing.csv") 
 event_df.reset_index() 
 
 for index, row in event_df.iterrows():
@@ -426,4 +451,3 @@ for index, row in event_df.iterrows():
 
 units_df.to_csv('listParse_units.csv')
 factions_df.to_csv('listParse_factions.csv')
-
