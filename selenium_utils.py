@@ -5,15 +5,37 @@ from selenium.webdriver.common.action_chains import ActionChains
 # https://medium.com/analytics-vidhya/python-selenium-all-mouse-actions-using-actionchains-197530cf75df
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from bs4 import BeautifulSoup
+import pandas as pd 
+from selenium.webdriver.edge.service import Service
+import os
 
 
+
+def createDriver ():
+
+    # Let python handle it
+    #driverNew = webdriver.Edge()
+    #Se = Service("C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe")
+    #options = EdgeOptions()
+    ##options.add_argument("--headless")
+    #options.add_argument("disable-gpu")
+    #options.add_argument('--allow-running-insecure-content')
+    #options.add_argument('--ignore-certificate-errors')
+    driverNew = webdriver.Edge(executable_path='C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe', service_log_path='NUL')
+    #driver.get("https://ipsis.adm.arcor.net/gui/pl/login?func=loginmask&option=nosession")
+
+    # The proper null device option for Windows
+    #driverNew = webdriver.Edge(service_log_path='NUL')
+    return driverNew 
+ 
 def viewAllListResults( driver ) :
     try:
-        elem = WebDriverWait(driver, 10 ).until(
-            EC.presence_of_element_located((By.XPATH, "Element_to_be_found")) #This is a dummy element
+        elem = WebDriverWait(driver, 15 ).until(
+            EC.presence_of_element_located((By.TAG_NAME,  'input')) #This is a dummy element
             )
-        #//
         resultsButton = driver.find_elements_by_tag_name( 'input')[1]
+        #resultsButton = driver.find_elements_by_tag_name( 'input')[1]
         actions = ActionChains( driver ); 
         actions.pause(  ) 
         actions.move_to_element( resultsButton ) 
@@ -25,11 +47,11 @@ def viewAllListResults( driver ) :
     except : 
         pass 
     finally:
-        print('time pass')
+        print('time pass - view all ')
 
     
 
-def waitSync( waitInSeconds = 3 ) :
+def waitSync( driver , waitInSeconds = 3 ) :
 
     try:
         elem = WebDriverWait(driver, waitInSeconds ).until(
@@ -67,11 +89,28 @@ def loginAndWait(driver , config_path, waitInSeconds=3 ):
 
 
     # logging in 
+    try:
+        user = WebDriverWait(driver, waitInSeconds ).until(
+            EC.presence_of_element_located((By.NAME, "email"))
+            )
+        pw = WebDriverWait(driver, waitInSeconds ).until(
+            EC.presence_of_element_located((By.NAME, "password"))
+            )
+        checkbox = WebDriverWait(driver, waitInSeconds ).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[4]/label/span[1]/input'))
+            )
+        btn = WebDriverWait(driver, waitInSeconds ).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[6]/button'))
+            )
+    except : 
+        pass 
+    finally:
+        print('time pass - login')
     
-    user  = driver.find_element_by_name( "email" )
-    pw = driver.find_element_by_name("password")
-    checkbox = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[4]/label/span[1]/input')
-    btn = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[6]/button')
+    #user  = driver.find_element_by_name( "email" )
+    #pw = driver.find_element_by_name("password")
+    #checkbox = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[4]/label/span[1]/input')
+    #btn = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/main/div/form/div[1]/div[6]/button')
 
     actions = ActionChains( driver ); 
     actions.pause( 1 )
@@ -85,4 +124,81 @@ def loginAndWait(driver , config_path, waitInSeconds=3 ):
     actions.pause( 1 )
     actions.perform() 
 
-    waitSync( waitInSeconds ) 
+    waitSync( driver , waitInSeconds ) 
+
+
+def loadEventList( driver, eventId ):
+
+    #eventUrl = row["url"]
+    #slashIndex = eventUrl.rfind( "/")
+    #eventId = eventUrl[ slashIndex + 1 : ]
+    #print( 'loading event ', eventId )
+    lists_df = pd.DataFrame() 
+
+    url = f"https://www.bestcoastpairings.com/event/{eventId}"
+    #if ( line == 0 ):
+    #driver = createDriver()
+    #driver.maximize_window() 
+    driver.get( url )
+    #waitSync( driver , 2 ) 
+    #loginAndWait( driver ,  'settings.ini' )
+    waitSync( driver , 5 ) 
+    date = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div/div/div[3]/h5[1]').text
+    waitSync( driver , 2 ) 
+
+    url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=roster"
+    driver.get( url )
+    viewAllListResults( driver ) 
+    waitSync( driver , 5 )
+
+    htmlCode = driver.page_source
+    soup=BeautifulSoup(htmlCode, "html.parser")
+
+    list_links = soup.find_all('a')
+    army_lists = []
+    for li in list_links : 
+        if 'href' in li.attrs : 
+            url = li.attrs['href'] ; 
+            if "list" in url :
+                obj = {} 
+                obj = { 
+                        "event" : eventId 
+                        , "list_url" : f"https://www.bestcoastpairings.com{url}"
+                        , "date" : date  
+                    }
+                army_lists.append( obj )
+    return army_lists
+    
+    #lists_df.to_csv( f"event_army_lists.csv ")
+
+def scrapeArmyListFromURL( driver, army_lists ):
+    lists_df = pd.DataFrame()
+    if len( army_lists ) > 6 : 
+        for al in army_lists :
+            driver.get( al["list_url"])
+            try:
+                elem = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
+                    )
+                full_list_text = driver.find_element_by_class_name( "list" ).text
+                al["full_list_text"] = full_list_text 
+            except : 
+                pass 
+            finally:
+                print('time pass')
+        
+        #foundLists = soup.find_all("a", string=["View List"])
+        #df = pd.DataFrame( pd.json_normalize(army_lists) )
+        #df.to_csv( f"event_army_lists.csv ")
+        lists_df = pd.concat( [ lists_df , pd.json_normalize( army_lists ) ] )
+        lists_df.to_csv( f"./armyList/event_{eventId}_armyLists.csv")
+    else :
+        print('skipping, less than 6 lists ')
+    # now get placings data
+    # https://www.bestcoastpairings.com/event/ZMe2dZaoUv?active_tab=pairings&round=1
+    
+    # trying to get all the pairings data 
+    #print( "end of browser ") ; 
+   # driver.close() 
+    
+    return lists_df 

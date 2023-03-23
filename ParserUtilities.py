@@ -370,32 +370,3 @@ def parseListString( armyList , listId ):
             keep.append( u ) 
 
     return keep , faction_obj 
-
-#units_df = [] 
-#factions_df = [] 
-
-units_df = pd.DataFrame({})
-factions_df = pd.DataFrame({})
-#units, faction = parseListString( lrl_list , 'asdas' )
-#units_df.to_csv('listParse_units.csv')
-#factions_df.to_csv('listParse_factions.csv')
-
-
-event_df = pd.read_csv( "event_Dv3LDfBRAU_army_lists.csv" )
-#event_df = pd.read_csv( "Dv3LDfBRAU_event_data_badParsing.csv") 
-event_df.reset_index() 
-
-for index, row in event_df.iterrows():
-    #print(row['c1'], row['c2'])
-    listUrl = row["list_url"] 
-    slashIndex = listUrl.rfind( "/")
-    listId = listUrl[ slashIndex + 1 : ]
-    print( 'loading list ', listId )
-    #https://www.bestcoastpairings.com/list/DWPNWKX8CK
-
-    units, faction = parseListString( row [ "full_list_text" ] , listId )
-    units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-    factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
-
-units_df.to_csv('listParse_units.csv')
-factions_df.to_csv('listParse_factions.csv')

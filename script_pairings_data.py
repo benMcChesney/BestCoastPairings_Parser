@@ -10,14 +10,14 @@ import pandas as pd
 import selenium_utils as su 
 
 #local RTT
-event_guid = "ZMe2dZaoUv"
+event_guid = "Dv3LDfBRAU"
 #LVO 
-event_guid = "AjzJ5hifwT"
+#event_guid = "AjzJ5hifwT"
 url = f"https://www.bestcoastpairings.com/event/{event_guid}?active_tab=pairings&round=1"
 driver = webdriver.Edge(executable_path='C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe')
 driver.get( url )
 driver.maximize_window() 
-loginAndWait(driver , 'settings.ini', 3 )
+su.loginAndWait(driver , 'settings.ini', 3 )
 
 
 def parseRoundResults( driver, eventId, round ): 
@@ -25,9 +25,39 @@ def parseRoundResults( driver, eventId, round ):
     event_guid = "ZMe2dZaoUv"
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=pairings&round={round}"
     driver.get( url )
-    su.waitSync( 5 )
+    su.waitSync( 6 )
+    # #undefined-tabpanel-2 > div > div > div > div > div.MuiGrid-root.MuiGrid-container.css-nwzen1 > div:nth-child(1) > div > div > div
+    # /html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/div
 
-    resultsButton = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[1]/div/div/input' ) 
+    # //*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[1]/div/div/input
+    # 
+    '''
+    <div tabindex="0" role="button" aria-expanded="true" aria-haspopup="listbox" aria-labelledby="undefined-label" 
+    class="MuiSelect-select MuiSelect-outlined MuiOutlinedInput-input MuiInputBase-input css-nlnh1t">24</div>
+    '''
+    # /html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/input
+
+    '''
+    //finds all tags of a type, for example h1,a,etc...
+    //Here Driver is my instance of WebDriver
+
+    var allTags = Driver.FindElements(By.XPath("//" + tagType));
+
+    //iterate over all elements of that tag, and find the one whose attribute value you want
+
+    foreach (var v in allTags)
+            {             
+            if ((v.GetAttribute.getText().equals(attributeName))
+                return v;             
+            }
+            return null;
+    '''
+    #resultsButton = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[1]/div/div/input' ) 
+    resultsButton = driver.find_element_by_xpath( '//*[@tabIndex=0]' )
+                                                 #//html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/input' ); 
+                                                 # /html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/input
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    #resultsButton = driver.find_element_by_tag_name( 'input')
 
     actions = ActionChains( driver ); 
     actions.move_to_element( resultsButton ) 
