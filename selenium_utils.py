@@ -12,7 +12,7 @@ import os
 
 
 
-def createDriver ():
+def createDriver ( exec_path ):
 
     # Let python handle it
     #driverNew = webdriver.Edge()
@@ -22,7 +22,7 @@ def createDriver ():
     #options.add_argument("disable-gpu")
     #options.add_argument('--allow-running-insecure-content')
     #options.add_argument('--ignore-certificate-errors')
-    driverNew = webdriver.Edge(executable_path='C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe', service_log_path='NUL')
+    driverNew = webdriver.Edge(executable_path=exec_path, service_log_path='NUL')
     #driver.get("https://ipsis.adm.arcor.net/gui/pl/login?func=loginmask&option=nosession")
 
     # The proper null device option for Windows
@@ -142,8 +142,15 @@ def loadEventList( driver, eventId ):
     driver.get( url )
     #waitSync( driver , 2 ) 
     #loginAndWait( driver ,  'settings.ini' )
-    waitSync( driver , 5 ) 
-    date = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div/div/div[3]/h5[1]').text
+    waitSync( driver , 2 ) 
+    date = '1970-01-01'
+    try :
+        elem = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located( By.XPATH, '//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div/div/div[3]/h5[1]' ) #This is a dummy element
+            )
+        date = elem.text
+    except : 
+        pass 
     waitSync( driver , 2 ) 
 
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=roster"
@@ -172,33 +179,31 @@ def loadEventList( driver, eventId ):
     #lists_df.to_csv( f"event_army_lists.csv ")
 
 def scrapeArmyListFromURL( driver, army_lists ):
-    lists_df = pd.DataFrame()
-    if len( army_lists ) > 6 : 
-        for al in army_lists :
-            driver.get( al["list_url"])
-            try:
-                elem = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
-                    )
-                full_list_text = driver.find_element_by_class_name( "list" ).text
-                al["full_list_text"] = full_list_text 
-            except : 
-                pass 
-            finally:
-                print('time pass')
-        
-        #foundLists = soup.find_all("a", string=["View List"])
-        #df = pd.DataFrame( pd.json_normalize(army_lists) )
-        #df.to_csv( f"event_army_lists.csv ")
-        lists_df = pd.concat( [ lists_df , pd.json_normalize( army_lists ) ] )
-        lists_df.to_csv( f"./armyList/event_{eventId}_armyLists.csv")
-    else :
-        print('skipping, less than 6 lists ')
+    objList = [] 
+    obj = {} 
+    for al in army_lists :
+        driver.get( al["list_url"])
+        try:
+            elem = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "list")) #This is a dummy element
+               )
+            #full_list_text = driver.find_element_by_class_name( "list" ).text
+            full_list_text = elem.text 
+            al["full_list_text"] = full_list_text 
+            obj = al 
+            objList.append( obj )
+
+        except Exception as e : 
+            print( e )
+            pass 
+        finally:
+            print('time pass')
+
+    #foundLists = soup.find_all("a", string=["View List"])
+    df = pd.DataFrame( pd.json_normalize(objList) )
     # now get placings data
     # https://www.bestcoastpairings.com/event/ZMe2dZaoUv?active_tab=pairings&round=1
     
-    # trying to get all the pairings data 
-    #print( "end of browser ") ; 
-   # driver.close() 
+
     
-    return lists_df 
+    return df 

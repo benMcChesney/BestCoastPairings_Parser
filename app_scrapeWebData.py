@@ -7,7 +7,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import pandas as pd 
-
+import selenium_utils as su 
 
 def export_data( data ):
     htmlCode = driver.page_source
@@ -27,8 +27,8 @@ def export_data( data ):
     print(f'exported {len(df)} rows' )
     
 
-
-driver = webdriver.Edge(executable_path='C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe')
+driver = su.createDriver( 'C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe' )
+#driver = webdriver.Edge(executable_path=)
 driver.get("https://www.bestcoastpairings.com/events");
 driver.implicitly_wait( 7 ); 
  
@@ -69,7 +69,7 @@ actions.click(startDate)
 for x in range(10):
     actions.send_keys_to_element(startDate, Keys.BACKSPACE)
 actions.release()
-actions.send_keys_to_element(startDate, "02/01/2023")
+actions.send_keys_to_element(startDate, "03/23/2023")
 actions.release()
 actions.perform()
 print ( 'debugger') 
@@ -81,12 +81,16 @@ gameType = driver.find_element_by_css_selector("#mui-component-select-gameType")
 
 actions = ActionChains(driver)
 actions.move_to_element( gameType)
+actions.send_keys( "Age of Sigmar")
 actions.click(gameType)
 actions.perform() 
 
-AosButton = driver.find_element_by_xpath( '//*[@id="menu-gameType"]/div[3]/ul/li[6]')
+#AosButton = driver.find_element_by_xpath( '//*[@id="menu-gameType"]/div[3]/ul/li[6]')
+AosButton = driver.find_element_by_xpath("//*[text()='Age of Sigmar']")
 actions = ActionChains(driver)
 actions.move_to_element(AosButton)
+
+
 actions.click(AosButton)
 actions.perform()
 # search button button[type="submit"]
@@ -105,10 +109,20 @@ pagesLoaded = 0
 doLoop = 1 
 while( 1 == 1 ):
     try:
-        elem = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
-        )
-        loadMoreButton = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/div/div/div[2]/div[3]/div[2]/button')
+        #elem = WebDriverWait(driver, 10).until(
+        #    EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
+        #)
+        #loadMoreButton = driver.find_element_by_xpath('//*[@id="root"]/div/div[3]/div[1]/div/div/div[2]/div[3]/div[2]/button')
+        su.waitSync( 5 )
+        loadMoreButton = driver.find_element_by_xpath("//*[text()='Load More']")
+        #driver.find_element_by_css_selector( 'button[tabIndex="0"]' ) 
+        
+        #loadMoreButton = WebDriverWait(driver, 10).until(
+            #EC.presence_of_element_located(By.XPATH, '//*[@id="root"]/div/div[3]/div[1]/div/div/div[2]/div[3]/div[2]/button')
+            #EC.presence_of_element_located( By.XPATH, "//*[text()='Load More']")
+        #    EC.presence_of_element_located( By.XPATH , '//*[@tabindex=0]' )
+        #)
+        
         #if ( loadMoreButton != None ) :  
         actions = ActionChains( driver ) 
         actions.move_to_element( loadMoreButton )
@@ -120,7 +134,8 @@ while( 1 == 1 ):
         #else: 
         #    print("button not found" )
         #    doLoop = -2 
-    except : 
+    except Exception as e : 
+        print( e )
         #print( "passing" )
         print("button not found" )
         doLoop = -2 

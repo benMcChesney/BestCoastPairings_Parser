@@ -20,11 +20,12 @@ event_df.reset_index()
 lists_df = pd.DataFrame( )
 
 debugCount = 0 
-driver = su.createDriver()
+driver = su.createDriver( 'C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe' )
 
-debugMax = 20 
+debugMax = 2000 
 for index, row in event_df.iterrows():
-    #print(row['c1'], row['c2'])
+    #try:
+        #print(row['c1'], row['c2'])
     eventUrl = row["url"]
     if debugCount == 0 : 
         driver.get( eventUrl )
@@ -36,14 +37,23 @@ for index, row in event_df.iterrows():
 
     linksList = su.loadEventList( driver , eventId )
     if len(linksList) > 6 : 
+        # debugging shortening 
+        # linksList = linksList[ 0 : 2 ]
         ret_df = su.scrapeArmyListFromURL( driver, linksList )
         prevLen = len( lists_df )
-        lists_df = pd.concat( [ lists_df , pd.json_normalize( ret_df ) ] )
-        lists_df.to_csv( f"./armyList/event_{eventId}_armyLists.csv")
+        lists_df = pd.concat( [ lists_df , ret_df ] )
+        ret_df.to_csv( f"./armyList/event_{eventId}_armyLists.csv")
         print( f"appending data {prevLen} -> {len(lists_df)} with {len(ret_df)} rows" )
         # trying to get all the pairings data 
         print( "end of browser ") ; 
-        ret_df.to_csv( f"event_army_lists_progress.csv ")
+        lists_df.to_csv( f"event_army_lists_progress.csv ")
+    else: 
+        print( f' skipping {eventId}, not enough lists')
+    #except : 
+    #    pass 
+    #finally:
+    #    idebug = 0 
+
     debugCount = debugCount + 1 
     if debugCount > debugMax : 
         break

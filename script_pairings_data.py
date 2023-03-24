@@ -25,7 +25,7 @@ def parseRoundResults( driver, eventId, round ):
     event_guid = "ZMe2dZaoUv"
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=pairings&round={round}"
     driver.get( url )
-    su.waitSync( 6 )
+    su.waitSync( 1 )
     # #undefined-tabpanel-2 > div > div > div > div > div.MuiGrid-root.MuiGrid-container.css-nwzen1 > div:nth-child(1) > div > div > div
     # /html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/div
 
@@ -53,7 +53,19 @@ def parseRoundResults( driver, eventId, round ):
             return null;
     '''
     #resultsButton = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[1]/div/div/input' ) 
-    resultsButton = driver.find_element_by_xpath( '//*[@tabIndex=0]' )
+    try:
+        resultsButton = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located(By.XPATH, '//*[@tabIndex=0]' ) #This is a dummy element
+            )
+        #full_list_text = driver.find_element_by_class_name( "list" ).text
+        full_list_text = elem.text 
+    except Exception as e : 
+        print( e )
+        pass 
+    finally:
+        print('time pass')
+
+    #resultsButton = driver.find_element_by_xpath( '//*[@tabIndex=0]' )
                                                  #//html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/input' ); 
                                                  # /html/body/div/div/div[3]/div/div[2]/div/div/div/div/div[4]/div[1]/div/div/input
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -139,18 +151,22 @@ def parseRoundResults( driver, eventId, round ):
                 pairing_obj = {} 
     return pairings
 
+games_df = pd.DataFrame() 
 
+for x in range ( 0 , 10 ): 
+    games = parseRoundResults( driver, "ZMe2dZaoUv" , x )
+    games_df = pd.json_normalize( games )
+    #su.waitSync( 3 )
+#games = parseRoundResults( driver, "ZMe2dZaoUv" , 1 )
+#games_df = pd.json_normalize( games )
+#su.waitSync( 3 )
 
-games = parseRoundResults( driver, "ZMe2dZaoUv" , 1 )
-games_df = pd.json_normalize( games )
-su.waitSync( 3 )
+#games = parseRoundResults( driver, "ZMe2dZaoUv" , 2 )
+#games_df = pd.concat( [ games_df , pd.json_normalize( games ) ] )
+#su.waitSync( 3 )
 
-games = parseRoundResults( driver, "ZMe2dZaoUv" , 2 )
-games_df = pd.concat( [ games_df , pd.json_normalize( games ) ] )
-su.waitSync( 3 )
+#games = parseRoundResults( driver, "ZMe2dZaoUv" , 3 )
+#games_df = pd.concat( [ games_df , pd.json_normalize( games ) ] )
+#su.waitSync( 3 )
 
-games = parseRoundResults( driver, "ZMe2dZaoUv" , 3 )
-games_df = pd.concat( [ games_df , pd.json_normalize( games ) ] )
-su.waitSync( 3 )
-
-games_df.to_csv( "pairings.csv")
+#games_df.to_csv( "pairings.csv")
