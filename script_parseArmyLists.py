@@ -70,7 +70,7 @@ def parseKeyValue( lineString, obj , renameKey = None ) :
                     doesExist = 0 
                 copyIndex+= 1
 
-        print(f"[{path}] = {extracted_value}")
+        #print(f"[{path}] = {extracted_value}")
         obj[ path ] = extracted_value 
         return path 
 
@@ -93,6 +93,7 @@ def resetObj( oObj , label ):
 
 def parseListString( armyList , listId ):
 
+
     formatType = detect_list_type( armyList )
     print("format is ", formatType )
     lineNum = 0 
@@ -111,7 +112,7 @@ def parseListString( armyList , listId ):
     for line in armyList.splitlines() :
         if len( line ) > 0 and "Created with BattleScribe" not in line : 
             #if "Leaders" in line or "LEADERS" :
-            print(  f"@ {lineNum} : {line}" )
+            #print(  f"@ {lineNum} : {line}" )
             oldHeading = headingType 
             if any( h in line for h in [ "Leaders" , "LEADERS" , "+ Leader +" , "LEADER" ] ):
                 headingType = UnitGroup.LEADER
@@ -124,19 +125,19 @@ def parseListString( armyList , listId ):
             if any( h in line for h in [ "Battleline" , "BATTLELINE" , "+ Battleline +"] ):           
                 headingType = UnitGroup.BATTLELINE
                 unit = resetObj(faction_obj, headingType.value)
-                print('BATTLELINE start at line ', lineNum )
+                #print('BATTLELINE start at line ', lineNum )
 
             #if "Units" in line or "OTHER" in line :
             if any( h in line for h in [ "Units" , "OTHER" ] ):
                 headingType = UnitGroup.UNIT
                 unit = resetObj(faction_obj, headingType.value)
-                print('Units start at line ', lineNum )
+                #print('Units start at line ', lineNum )
             
             #if "Endless Spells" in line or "ENDLESS SPELL" in line:
             if any( h in line for h in [ "Endless Spells" , "ENDLESS SPELL" ] ):
                 headingType = UnitGroup.ENDLESS_SPELLS
                 unit = resetObj(faction_obj, headingType.value)
-                print('Endless start at line ', lineNum )
+                #print('Endless start at line ', lineNum )
 
             #if "Behemoth" in line or "BEHEMOTH" in line : 
             if any( h in line for h in [ "Behemoth" , "BEHEMOTH", "Behemoths" ] ):
@@ -149,11 +150,11 @@ def parseListString( armyList , listId ):
                     if lineNum > 1 and dashIndex == -1 :
                         headingType = UnitGroup.UNIT  
                         unit = {} 
-                        print('resetting obj')
+                        #print('resetting obj')
 
             # change!
             if oldHeading != headingType : 
-                print( f" change in heading from {oldHeading} -> {headingType} ")
+                #print( f" change in heading from {oldHeading} -> {headingType} ")
                 if formatType in [ ArmyListFormatType.AOS_MOBILE_APP 
                 , ArmyListFormatType.WARSCROLL_BUILDER  ] : 
                     if unit != {} :  
@@ -381,21 +382,25 @@ factions_df = pd.DataFrame({})
 #factions_df.to_csv('listParse_factions.csv')
 
 
-event_df = pd.read_csv( "event_Dv3LDfBRAU_army_lists.csv" )
+event_df = pd.read_csv( "_DONE_event_army_lists_progress.csv" )
 #event_df = pd.read_csv( "Dv3LDfBRAU_event_data_badParsing.csv") 
 event_df.reset_index() 
 
-
+for index, row in event_df.iterrows():
                 
-listUrl = row["list_url"] 
-slashIndex = listUrl.rfind( "/")
-listId = listUrl[ slashIndex + 1 : ]
-print( 'loading list ', listId )
-#https://www.bestcoastpairings.com/list/DWPNWKX8CK
+    listUrl = row["list_url"] 
+    slashIndex = listUrl.rfind( "/")
+    listId = listUrl[ slashIndex + 1 : ]
+    #print( 'loading list ', listId )
+    #https://www.bestcoastpairings.com/list/DWPNWKX8CK
 
-units, faction = parseListString( row [ "full_list_text" ] , listId )
-units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
-factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
+    army_list = row [ "full_list_text" ] 
+    if isinstance(army_list, str) :
+        units, faction = parseListString( army_list , listId )
+        units_df = pd.concat( [ units_df , pd.json_normalize( units ) ] )
+        factions_df = pd.concat( [ factions_df , pd.json_normalize( faction ) ] )
 
-units_df.to_csv('listParse_units.csv')
-factions_df.to_csv('listParse_factions.csv')
+        units_df.to_csv('listParse_units.csv')
+        factions_df.to_csv('listParse_factions.csv')
+         
+   

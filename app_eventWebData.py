@@ -58,4 +58,5 @@ for index, row in event_df.iterrows():
     if debugCount > debugMax : 
         break
 
+
 ret_df.to_csv( f"event_army_lists_events.csv ")

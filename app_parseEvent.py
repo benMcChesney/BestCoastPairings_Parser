@@ -11,21 +11,39 @@ import selenium_utils as su
 import ParserUtilities as pu 
 
 
-    
-lists_df = pd.DataFrame() 
+
 
 driver = su.createDriver( 'C:/lab/bestcoastpairings_parser/edgedriver_win64/msedgedriver.exe' )
-su.loadEventList(  'Dv3LDfBRAU' , lists_df )
+driver.get( 'https://www.bestcoastpairings.com/login') 
+su.waitSync( 3 )
+su.loginAndWait( driver, "settings.ini" , 4 )
+eventObjs = []
 
-driver.get( 'https://www.bestcoastpairings.com/event/Dv3LDfBRAU' )
+event_df = pd.read_csv( "events_links.csv" )
+#event_df = pd.read_csv( "Dv3LDfBRAU_event_data_badParsing.csv") 
+event_df.reset_index() 
+#https://www.bestcoastpairings.com/event/tFIPqaYN2S
+debugCount = 0 
+for index, row in event_df.iterrows():
+    eventId = row["url"][40:]
+    obj = su.getEventDetails( driver, eventId )
+    eventObjs.append( obj )    
+    #print(f"@ {index}/{len(event_df)}")
+    #debugCount = debugCount + 1
+    #if debugCount > 5 : 
+    #    break 
+event_df = pd.json_normalize( eventObjs )
+event_df.to_csv( "event_meta.csv" )
 
-su.waitSync( 2 )
 i = 0 
+
+  
+
 
 # address1 = //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div/div[4]/a/p[1]
 # address2 = //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div/div[4]/a/p[2]
 # address3 = //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div/div[4]/a/p[3]
-# ticketPrice = //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[2]/div[1]/div[1]/h5
+# ticketPrice = eventObj[ 'ticketPrice' ] = driver.get_element_by_xpath('//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[2]/div[1]/div[1]/h5' ).text
 # eventName = //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div/div[1]/h4
 # event Owner //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div/div[5]/h5
 # date end = //*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div/div[3]/h5[1]

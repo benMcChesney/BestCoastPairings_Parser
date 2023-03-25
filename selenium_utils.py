@@ -68,12 +68,13 @@ def loginAndWait(driver , config_path, waitInSeconds=3 ):
     ###
     # location 
     ## mui-component-select-location
+    #driver.get( 'https://www.bestcoastpairings.com/login')
     login = driver.find_element_by_xpath( '//*[@id="root"]/div/div[1]/header/div/div[3]/button')
-    accept = driver.find_element_by_id( 'rcc-confirm-button')
-    
+    #accept = driver.find_element_by_id( 'rcc-confirm-button')
     actions = ActionChains(driver)
-    actions.move_to_element(accept)
-    actions.click(accept)
+    #if ( accept != None ):
+    #    actions.move_to_element(accept)
+    #    actions.click(accept)
     actions.pause(1)
     actions.move_to_element(login)
     actions.click(login)
@@ -207,3 +208,66 @@ def scrapeArmyListFromURL( driver, army_lists ):
 
     
     return df 
+
+def getEventDetails( driver, eventId ): 
+    eventObj = {} 
+    driver.get( f'https://www.bestcoastpairings.com/event/{eventId}')  
+    eventObj[ 'eventId'] = eventId
+    waitSync( driver , 2 ) 
+    date = '1970-01-01'
+
+    xp = '//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div'
+
+    try:
+        #elem = WebDriverWait(driver, 5).until(
+        #    EC.presence_of_element_located( By.XPATH,   ) )
+        titleElem = driver.find_element_by_xpath( '//*[@id="root"]/div/div[3]/div/div[1]/div/div[1]/div[1]/h3' )
+        
+        eventObj["eventName"] = titleElem.text
+        divFields = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/div' ).text
+        # 'REGISTER FOR THIS EVENT\nAGE OF SIGMAR\nTestTest\nEVENT STARTS\nJuly, 01, 2022\n10:00 BST\nEVENT END\nJuly, 01, 2022\n19:00 BST\nLOCATION\nHigh Wycombe, England\nGB\nEVENT OWNER\nSteve Curtis\nTICKETS REMAINING\n18 of 20\nEVENT DETAILS:'
+        splits = divFields.split( '\n')
+        debug = 2
+        prevLine = ''
+
+        titleCards = ["EVENT STARTS","EVENT END","LOCATION","EVENT OWNER" ] 
+        location = '' 
+        locationIndex = 10000
+        index = 0 
+        for line in splits :
+
+            #text = driver.find_element_by_xpath( f"{xp}/div[{i}]").text
+            #line = splits[i]
+            #text = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-0"]/div/div[2]/div/div/div/div[1]/' ).text
+            #print( 'text is ', text )
+            print( 'line is ', line )
+            if "TICKET PRICE" in line or "EVENT OWNER" in line : 
+                locationIndex = 100000  
+            if "EVENT STARTS" in prevLine : 
+                eventObj[ "startDate" ] = line
+            elif "EVENT END" in prevLine : 
+                eventObj[ "endDate" ] = line 
+            elif "LOCATION" in prevLine : 
+                eventObj[ "location" ] = line 
+                location = eventObj[ "location" ]
+                locationIndex = index 
+            elif "EVENT OWNER" in prevLine :
+                eventObj[ "eventOwner" ] = line
+            elif "TICKET PRICE" in prevLine : 
+                eventObj[ "ticketPrice"] = line  
+            elif index > locationIndex : 
+                location = location + ' ' + line 
+                print( f'location > adding {line}')
+                print( 'location now', location )
+            
+            prevLine = line 
+            index = index + 1 
+        eventObj[ "location" ] = location 
+
+    except Exception as e : 
+        print ( e )
+        pass 
+    finally:
+        print('time pass')
+        
+        return eventObj
