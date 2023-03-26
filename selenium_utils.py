@@ -69,6 +69,7 @@ def loginAndWait(driver , config_path, waitInSeconds=3 ):
     # location 
     ## mui-component-select-location
     #driver.get( 'https://www.bestcoastpairings.com/login')
+    driver.get( 'https://www.bestcoastpairings.com/login') 
     login = driver.find_element_by_xpath( '//*[@id="root"]/div/div[1]/header/div/div[3]/button')
     #accept = driver.find_element_by_id( 'rcc-confirm-button')
     actions = ActionChains(driver)
