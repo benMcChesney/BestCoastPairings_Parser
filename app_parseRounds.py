@@ -69,7 +69,7 @@ def parseRoundResults( driver, eventId, round, prevRoundTitle ):
                 pairing_obj['pairingId'] = pairingId
                 for line in lines :  
                     #line = child.text
-                    print( f'div[{div_index}]:pElem[{child_index}] = {line}') 
+                    #print( f'div[{div_index}]:pElem[{child_index}] = {line}') 
                 
                         # elem_index > 0 : 
                     if nameEnd == 0: 
@@ -132,7 +132,7 @@ def parseRoundResults( driver, eventId, round, prevRoundTitle ):
             #pairing_obj = {} 
         div_index = div_index + 1 
         df = pd.json_normalize( pairingRound )
-        df.to_csv( f"event_{eventId}_round{round}.csv")
+        df.to_csv( f"./armylist/event_{eventId}_round{round}.csv")
         print ( f'adding {len( pairingRound )} pairings ')
         return pairingRound, roundTitle
 
@@ -141,26 +141,30 @@ su.waitSync( 1 )
 su.loginAndWait( driver, "settings.ini" , 4 )
 eventObjs = []
 
+
 event_df = pd.read_csv( "events_links.csv" )
-#event_df = pd.read_csv( "Dv3LDfBRAU_event_data_badParsing.csv") 
 event_df.reset_index() 
 all_pairings = [] 
 #https://www.bestcoastpairings.com/event/tFIPqaYN2S
 debugCount = 0 
-roundTitle = "" 
-prevRoundTitle = ""
-i = 1 
-while 1 == 1 : 
-    print( f'parsing round [{i}]')
-    pairings, roundTitle = parseRoundResults( driver, "Dv3LDfBRAU", i , prevRoundTitle )
-    
-    if roundTitle == prevRoundTitle : 
-        print('repeat round! exiting')
-        break   
-    else : 
-        all_pairings.extend( pairings )
-    prevRoundTitle = roundTitle
-    i = i + 1
+for index, row in event_df.iterrows():
+    eventId = row["url"][40:]
+    print( 'parsing event ', eventId )
+
+    roundTitle = "" 
+    prevRoundTitle = ""
+    i = 1 
+    while 1 == 1 : 
+        print( f'parsing round [{i}]')
+        pairings, roundTitle = parseRoundResults( driver,eventId, i , prevRoundTitle )
+        
+        if roundTitle == prevRoundTitle : 
+            print('repeat round! exiting')
+            break   
+        else : 
+            all_pairings.extend( pairings )
+        prevRoundTitle = roundTitle
+        i = i + 1
 
 #for index, row in event_df.iterrows():
 #    eventId = row["url"][40:]
