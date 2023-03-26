@@ -12,12 +12,13 @@ import ParserUtilities as pu
 
 
 
-def parseRoundResults( driver, eventId, round ): 
+def parseRoundResults( driver, eventId, round, prevRoundTitle ): 
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=pairings&round={round}"
     driver.get( url )
     su.waitSync( 2 )
    
     su.viewAllListResults( driver )
+    pairingRound = [] 
     #su.waitSync( 5 )
     #driver.implicitly_wait(5)
 
@@ -28,24 +29,23 @@ def parseRoundResults( driver, eventId, round ):
     except : 
         pass 
     finally:
-        print('time pass - grabbing source code ')
-        htmlCode = driver.page_source
-        soup=BeautifulSoup(htmlCode, "html.parser")
-    
-
-        #list_links1 = soup.find_all('//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[3]/div[2]/a')
-        list_links = soup.find_all( 'a' )
-        
         # get title
         roundTitle = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[1]/div[1]/p').text
+        if roundTitle == prevRoundTitle : 
+            print('repeat round! exiting')
+            return pairingRound, roundTitle
 
         # TODO : // need a beter way to detect the "games dev" - it can change between rounds the order of DIVs
-        games = driver.find_elements_by_xpath ( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[3]/div/a')
+        headTag = driver.find_element_by_tag_name( "h6" ) 
+        pHeadTag = headTag.find_element_by_xpath( "../../../../div")
+        #games = driver.find_elements_by_xpath ( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[3]/div/a')
+        games = pHeadTag.find_elements_by_xpath( "./div/div/a")
+        
         
         # round three having troulbe let's compare paths
         #                                       //*[@id="undefined-tabpanel-2"]/div/div/div/div/div[4]/div[2]/a
         div_index = 0 
-        pairingRound = [] 
+        
         for g in games :  
             
             #pairings_list = g.find_elements_by_tag_name( 'p' )
@@ -65,7 +65,7 @@ def parseRoundResults( driver, eventId, round ):
             child_index = 0 
             for child in child_divs :
                 lines = child.text.split( '\n')
-                pairingId = child.get_attribute( "href")[39:]
+                pairingId = child.get_attribute( "href")[46:]
                 pairing_obj['pairingId'] = pairingId
                 for line in lines :  
                     #line = child.text
@@ -152,7 +152,7 @@ prevRoundTitle = ""
 i = 1 
 while 1 == 1 : 
     print( f'parsing round [{i}]')
-    pairings, roundTitle = parseRoundResults( driver, "Dv3LDfBRAU", i )
+    pairings, roundTitle = parseRoundResults( driver, "Dv3LDfBRAU", i , prevRoundTitle )
     
     if roundTitle == prevRoundTitle : 
         print('repeat round! exiting')
