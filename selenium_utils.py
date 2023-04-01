@@ -34,19 +34,25 @@ def viewAllListResults( driver ) :
         elem = WebDriverWait(driver, 15 ).until(
             EC.presence_of_element_located((By.TAG_NAME,  'input')) #This is a dummy element
             )
-        resultsButton = driver.find_elements_by_tag_name( 'input')[1]
-        #resultsButton = driver.find_elements_by_tag_name( 'input')[1]
-        actions = ActionChains( driver ); 
-        actions.pause(  ) 
-        actions.move_to_element( resultsButton ) 
-        actions.click() 
-        actions.pause( 1 ) 
-        actions.send_keys( 'A')  
-        actions.send_keys( Keys.ENTER )
-        actions.perform() 
-    except : 
+        
+    except Exception as e  : 
+        print( e )
+        debug = 1 
         pass 
     finally:
+        waitSync( driver, 2 )
+        inputs = driver.find_elements_by_tag_name( 'input')
+        if len( inputs ) > 1 : 
+            resultsButton = inputs[1]
+            #resultsButton = driver.find_elements_by_tag_name( 'input')[1]
+            actions = ActionChains( driver ); 
+            #actions.pause(  ) 
+            actions.move_to_element( resultsButton ) 
+            actions.click() 
+            actions.pause( .25 ) 
+            actions.send_keys( 'A')  
+            actions.send_keys( Keys.ENTER )
+            actions.perform() 
         print('time pass - view all ')
 
     
