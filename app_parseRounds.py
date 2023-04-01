@@ -15,25 +15,32 @@ import ParserUtilities as pu
 def parseRoundResults( driver, eventId, round, prevRoundTitle ): 
     url = f"https://www.bestcoastpairings.com/event/{eventId}?active_tab=pairings&round={round}"
     driver.get( url )
-    su.waitSync( 2 )
+    #su.waitSync( 2 )
    
     su.viewAllListResults( driver )
     pairingRound = [] 
     #su.waitSync( 5 )
     #driver.implicitly_wait(5)
-
+    #roundTitle = "No Title"
     try:
-        elem = WebDriverWait(driver, 5 ).until(
-            EC.presence_of_element_located((By.ID, "Element_to_be_found")) #This is a dummy element
+        elem = WebDriverWait(driver, 4 ).until(
+            EC.presence_of_element_located((By.LINK_TEXT, "View List")) #This is a dummy element
+            #EC.presence_of_element_located(By.ID, '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[1]/div[1]/p')
             )
-    except : 
+        #titleElem = WebDriverWait(driver, 4 ).until(
+        #    EC.presence_of_element_located(By.XPATH, '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div/div[1]/p') #This is a dummy element
+        #    #EC.presence_of_element_located(By.ID, '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[1]/div[1]/p')
+        #    )
+        roundTitle = titleElem.text 
+    except Exception as e : 
+        print( e )
         pass 
     finally:
         # get title
-        roundTitle = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div[1]/div[1]/p').text
-        if roundTitle == prevRoundTitle : 
-            print('repeat round! exiting')
-            return pairingRound, roundTitle
+        roundTitle = driver.find_element_by_xpath( '//*[@id="undefined-tabpanel-2"]/div/div/div/div/div/div[1]/p' ) .text
+        #if roundTitle == prevRoundTitle : 
+        #    print('repeat round! exiting')
+        #    return pairingRound, roundTitle
 
         # TODO : // need a beter way to detect the "games dev" - it can change between rounds the order of DIVs
         headTag = driver.find_element_by_tag_name( "h6" ) 
@@ -156,15 +163,25 @@ for index, row in event_df.iterrows():
     i = 1 
     while 1 == 1 : 
         print( f'parsing round [{i}]')
-        pairings, roundTitle = parseRoundResults( driver,eventId, i , prevRoundTitle )
-        
-        if roundTitle == prevRoundTitle : 
-            print('repeat round! exiting')
-            break   
-        else : 
-            all_pairings.extend( pairings )
-        prevRoundTitle = roundTitle
-        i = i + 1
+
+        try:
+            pairings, roundTitle = parseRoundResults( driver,eventId, i , prevRoundTitle )
+        except Exception as e : 
+            print ( e ) 
+            print( 'could not parse round - skipping')
+            pass 
+        finally:
+            if roundTitle == prevRoundTitle : 
+                print('repeat round! exiting')
+                break   
+            else : 
+                all_pairings.extend( pairings )
+            prevRoundTitle = roundTitle
+            i = i + 1
+
+    pairings_df = pd.json_normalize( all_pairings )
+    pairings_df.to_csv( "pairingsData.csv" )
+
 
 #for index, row in event_df.iterrows():
 #    eventId = row["url"][40:]
