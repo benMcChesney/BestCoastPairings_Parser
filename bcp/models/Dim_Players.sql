@@ -2,14 +2,10 @@
 
 select 
 	ROW_NUMBER() OVER( ORDER BY player ) as Id 
-	, [player]
+	, *
 	FROM ( 
-		select distinct(player1) as [player]
-		FROM pairings
+		select distinct(playerName) as [player], eventId , playerListId 
+		FROM pairingsData
 
-		UNION 
-
-		select distinct(player2 ) as [player]
-		FROM pairings
 	) as sub 
-	WHERE PLAYER IS NOT NULL 
+	WHERE PLAYER IS NOT NULL OR playerListId IS NOT NULL 
