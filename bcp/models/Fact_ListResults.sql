@@ -1,7 +1,10 @@
 
-with CTE as
-( 
-
+select 
+	joins.*
+	, dl.Id as ListFK 
+	, CAST( joins.winCount as varchar(5) ) + '-' + CAST( joins.lossCount as varchar(5) ) + '-' + CAST( joins.tieCount as varchar(5) ) as recordResult
+	, joins.winCount + joins.lossCount + joins.tieCount as totalGames 
+FROM ( 
 select 
 	playerListId
 	, SUM( winCount ) as winCount
@@ -31,22 +34,6 @@ FROM pairingsData
 WHERE playerListId IS NOT NULL 
 ) as sub 
 GROUP BY playerListId
-) 
-
-select
-	[index] as [Id]
-	, listId 
-	, faction
-	, [Grand Strategy] as GrandStrategy  
-	, COALESCE( Triumph , triumphs ) as triumph
-	, subfaction
-	, [Mortal Realm] as MortalRealm
-	, eventId 
-	, cte.* 
-FROM listParse_factions as a 
-LEFT OUTER JOIN cte 
-ON cte.playerListId = a.listId
-
-
-
-
+) as joins 
+LEFT OUTER JOIN Dim_List as dl 
+ON joins.playerListId = dl.listId

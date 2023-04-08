@@ -25,6 +25,12 @@
           <AssociatedConnUserName>dbt_sqlserver</AssociatedConnUserName>
           <FullPath>Dim_ArmyListLines.sql</FullPath>
         </FileNode>
+        <FileNode Name="Dim_ArmyListText.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:(local):False:dbt_sqlserver</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>(local)</AssociatedConnSrvName>
+          <AssociatedConnUserName>dbt_sqlserver</AssociatedConnUserName>
+          <FullPath>Dim_ArmyListText.sql</FullPath>
+        </FileNode>
         <FileNode Name="Dim_Calendar.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:(local):False:dbt_sqlserver</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>(local)</AssociatedConnSrvName>
@@ -49,11 +55,23 @@
           <AssociatedConnUserName>dbt_sqlserver</AssociatedConnUserName>
           <FullPath>Dim_Players.sql</FullPath>
         </FileNode>
+        <FileNode Name="Fact_ListResults.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:(local):False:dbt_sqlserver</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>(local)</AssociatedConnSrvName>
+          <AssociatedConnUserName>dbt_sqlserver</AssociatedConnUserName>
+          <FullPath>Fact_ListResults.sql</FullPath>
+        </FileNode>
         <FileNode Name="Fact_PlayerEventRank.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:(local):False:dbt_sqlserver</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>(local)</AssociatedConnSrvName>
           <AssociatedConnUserName>dbt_sqlserver</AssociatedConnUserName>
           <FullPath>Fact_PlayerEventRank.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Fact_PlayerRounds.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>Fact_PlayerRounds.sql</FullPath>
         </FileNode>
       </Items>
     </LogicalFolder>
